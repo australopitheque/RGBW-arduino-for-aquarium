@@ -33,6 +33,9 @@ int Heureleverc;
 int minuteleverc;
 int heurecoucherc;
 int minutecoucherc;
+int heuretransit;
+int minutetransit;
+
 byte oldday;
 byte oldminute;
 
@@ -52,13 +55,13 @@ uint32_t kelvin; // initialisation kelvin
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
-#define NUM_LEDS 20
+#define NUM_LEDS 15
 #define DATA_PIN 6 // Défini le pin de la bande pixels ws2812 DATA_PIN = 6
 // Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, DATA_PIN, NEO_RGB + NEO_KHZ800);
 Adafruit_NeoPixel pixels(NUM_LEDS, DATA_PIN, NEO_GRBW + NEO_KHZ800);
 unsigned long tempoled = 0;
-const long intervalled = 19000; // delai entre les changements couleur led 19 sec
-const long interval = 250;      // Change this value (ms)
+const long intervalled = 190; // delai entre les changements couleur led 19 sec
+const long interval = 250;    // Change this value (ms)
 int setWhitePointRed;
 int setWhitePointGrn;
 int setWhitePointBlu;
@@ -263,6 +266,31 @@ void colorWipe(uint32_t nPix, uint32_t col)
     }
   }
 }
+void whitesun()// ne gere que le white suivant l'heure de la journée partant du lever au coucher soleil
+{
+  int minuteidxw;
+  int heureidxw;
+  time_t t = myRTC.get();
+  if ((hour(t) * 100 + minute(t) >= Heurelever * 100 + minutelever) && (hour(t) * 100 + minute(t) <= heuretransit * 100 + minutetransit))
+  {
+    minuteidxw = map((minute(t)), 0, 59, 0, 10);
+    heureidxw = map((hour(t)), Heurelever, heuretransit, 0, 90);
+    Serial.print("idxW  AM: ");
+  }
+  else if ((hour(t) * 100 + minute(t) <= heurecoucher * 100 + minutelever) && (hour(t) * 100 + minute(t) >= heuretransit * 100 + minutetransit))
+  {
+    minuteidxw = map((minute(t)), 0, 59, 10, 0);
+    heureidxw = map((hour(t)), heuretransit, heurecoucher, 90, 0);
+    Serial.print("idxW  PM: ");
+  }
+  else
+  {
+    heureidxw = 0;
+    minuteidxw = 0;
+  }
+  idxW = map((heureidxw + minuteidxw), 0, 100, 0, 255);
+  Serial.println(idxW);
+}
 void nuitlune()
 {
   byte illune;
@@ -276,11 +304,12 @@ void nuitlune()
 }
 void journee()
 {
+  whitesun();
   Nbpixel = 1;
   Serial.println(" VOL+ - Journée  ");
   isunrise = 1356; // reinitialisation des compteurs des lever coucher
   isunset = 0;
-  colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(255, 249, 253, 255)); // 6500K
+  colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(255, 249, 253, idxW)); // 6500K
   fineffect = true;
 }
 void ledoninterval(uint32_t i)
@@ -318,6 +347,7 @@ void couchersoleil()
 {
   if (isunset <= 1353)
   {
+    whitesun();
     Nbpixel = 1;
     Serial.print(" CH- - Sunset ");
     Serial.print(isunset);
@@ -359,15 +389,17 @@ void couchersoleil()
     ledoninterval(isunset);
     isunset += 3;
     execol = 0;
-    colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(idxR / intensity, idxG / intensity, idxB / intensity, idxW));
+    colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(idxR / intensity, idxG / intensity, idxB / intensity, idxW / intensity));
   }
   fineffect = true;
 }
+
 void leversoleil()
 {
   if (isunrise >= 3)
   {
     isunrise -= 3;
+    whitesun();
     Serial.println(" CH+ - Sunrise ");
     Serial.print(isunrise);
     Serial.print("/");
@@ -406,7 +438,7 @@ void leversoleil()
     }
     ledoninterval(isunrise);
     execol = 0;
-    colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(idxR / intensity, idxG / intensity, idxB / intensity, idxW));
+    colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(idxR / intensity, idxG / intensity, idxB / intensity, idxW / intensity));
   }
   fineffect = true;
 }
@@ -415,7 +447,7 @@ void leversoleil()
 void crepusculeaube()
 {
   float centiemeaube = (Heurelever + (minutelever / 60.0)) - 0.25;        // decallage de l'horaire de -0.25 heure, aube
-  float centiemecoucher = (heurecoucher + (minutecoucher / 60.0))+ 0.50 ; // decallage de l'horaire de +0.75 heure, crepuscule
+  float centiemecoucher = (heurecoucher + (minutecoucher / 60.0)) + 0.50; // decallage de l'horaire de +0.50 heure, crepuscule
   Heureleverc = floor(centiemeaube);
   minuteleverc = (centiemeaube - Heureleverc) * 60;
   minuteleverc = minuteleverc % 60;
@@ -493,7 +525,7 @@ void commandeffect()
       {                      // si compteur atteind 1 sec
         tempoled = millis(); // reinitialise le compteur
         execol = 0;
-        couchersoleil(); 
+        couchersoleil();
       }
     }
   }
@@ -697,24 +729,28 @@ void luneimage()
   double jd = 0; // Julian Date
   double ed = 0; // jours écoulés depuis le début de la pleine lune
   time_t t = myRTC.get();
-  calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal); // calcul lever/coucher soleil
-  SunTime24h(toLocal(sunrisecal));                                                                      // conversion en h et m locale
-  Heurelever = hourscal;                                                                                // recupere l'heure convertie
-  minutelever = minutescal;                                                                             // recupere minutes convertie
+  // calcul lever/coucher soleil
+  calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal);
+  SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
+  Heurelever = hourscal;           // recupere l'heure convertie
+  minutelever = minutescal;        // recupere minutes convertie
   Serial.print("Sunset/rise calculation:  ");
   SunTime24h(toLocal(sunsetcal));
   heurecoucher = hourscal;
   minutecoucher = minutescal;
+  SunTime24h(toLocal(transitcal));
+  heuretransit = hourscal;
+  minutetransit = minutescal;
   if (day(t) != oldday)
-  {
+  { // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
     // jd = julianDate(1972,1,1); // utilisé pour déboguer ceci est une nouvelle lune
-    jd = int(jd - 2244116.75); // start at Jan 1 1972
+    jd = int(jd - 2244116.75); // commence le Jan 1 1972
     jd /= 29.53;               // diviser par le cycle lunaire
     NumPhase = jd;
     jd -= NumPhase;                  // laisse la partie fractionnaire de jd
     ed = jd * 29.53;                 // jours écoulés ce mois-ci
-    nfm = String((int(29.53 - ed))); // jours jusqu'à la prochaine pleine lune
+    nfm = String((int(29.53 - ed))); // jours jusqu'à la prochaine pleine lune, n'est pas utiliser
     NumPhase = jd * 8 + 0.5;
     NumPhase = NumPhase & 7;
     oldday = day(t);
