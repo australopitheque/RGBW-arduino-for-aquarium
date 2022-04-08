@@ -455,7 +455,7 @@ void crepusculeaube()
   minutecoucherc = (centiemecoucher - heurecoucherc) * 60;
   minutecoucherc = minutecoucherc % 60;
 }
-void commandeffect()
+void commandeffect() //declanchement des effets suivant l'horaire en mode automatique
 {
   crepusculeaube();
   time_t t = myRTC.get();
@@ -469,7 +469,7 @@ void commandeffect()
     effect = "couchersoleil";
     fineffect = false;
   }
-  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120) && (isunrise == 0) || (isunset == 1356))
+  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120) && ((isunrise == 0) || (isunset == 1356)))
   { // si 2h avant heure coucher et si 2h apres heure lever
     effect = "jours";
     fineffect = false;
