@@ -60,8 +60,8 @@ uint32_t kelvin; // initialisation kelvin
 // Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, DATA_PIN, NEO_RGB + NEO_KHZ800);
 Adafruit_NeoPixel pixels(NUM_LEDS, DATA_PIN, NEO_GRBW + NEO_KHZ800);
 unsigned long tempoled = 0;
-const long intervalled = 190; // delai entre les changements couleur led 19 sec
-const long interval = 250;    // Change this value (ms)
+const long intervalled = 19000; // delai entre les changements couleur led 19 sec
+const long interval = 250;      // Change this value (ms)
 int setWhitePointRed;
 int setWhitePointGrn;
 int setWhitePointBlu;
@@ -266,7 +266,7 @@ void colorWipe(uint32_t nPix, uint32_t col)
     }
   }
 }
-void whitesun()// ne gere que le white suivant l'heure de la journée partant du lever au coucher soleil
+void whitesun() // ne gere que le white suivant l'heure de la journée partant du lever au coucher soleil
 {
   int minuteidxw;
   int heureidxw;
@@ -309,7 +309,7 @@ void journee()
   Serial.println(" VOL+ - Journée  ");
   isunrise = 1356; // reinitialisation des compteurs des lever coucher
   isunset = 0;
-  colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(255, 249, 253, idxW)); // 6500K
+  colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(255 / intensity, 249 / intensity, 253 / intensity, idxW / intensity)); // 6500K
   fineffect = true;
 }
 void ledoninterval(uint32_t i)
@@ -459,22 +459,22 @@ void commandeffect()
 {
   crepusculeaube();
   time_t t = myRTC.get();
-  if ((hour(t) * 100 + minute(t) >= Heureleverc * 100 + minuteleverc) && (hour(t) * 100 + minute(t) < Heurelever * 100 + minutelever + 200))
+  if ((hour(t) * 60 + minute(t) >= Heureleverc * 60 + minuteleverc) && (hour(t) * 60 + minute(t) < Heurelever * 60 + minutelever + 120))
   { // test si heure lever -.5 (aube) et si 2h apres lever
     effect = "leversoleil";
     fineffect = false;
   }
-  else if ((hour(t) * 100 + minute(t) >= heurecoucher * 100 + minutecoucher - 200) && (hour(t) * 100 + minute(t) <= heurecoucherc * 100 + minutecoucherc))
+  else if ((hour(t) * 60 + minute(t) >= heurecoucher * 60 + minutecoucher - 120) && (hour(t) * 60 + minute(t) <= heurecoucherc * 60 + minutecoucherc))
   { // si 1h avant heure coucher et si heure coucher +.5 (crepuscule)
     effect = "couchersoleil";
     fineffect = false;
   }
-  else if ((hour(t) * 100 + minute(t) > Heurelever * 100 + minutelever + 200) && (hour(t) * 100 + minute(t) < heurecoucher * 100 + minutecoucher - 200))
+  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120) && (isunrise == 0) || (isunset == 1356))
   { // si 2h avant heure coucher et si 2h apres heure lever
     effect = "jours";
     fineffect = false;
   }
-  else if ((hour(t) * 100 + minute(t) <= Heureleverc * 100 + minuteleverc) || (hour(t) * 100 + minute(t) > heurecoucherc * 100 + minutecoucherc))
+  else if ((hour(t) * 60 + minute(t) <= Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) > heurecoucherc * 60 + minutecoucherc))
   { // si avant heure lever ou si apres heure coucher
     effect = "lune";
     fineffect = false;
