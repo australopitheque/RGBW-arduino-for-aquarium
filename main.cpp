@@ -8,16 +8,17 @@
 #include <math.h>
 #include <HardwareSerial.h>
 #include <SolarCalculator.h>
-
+#include "moon.h"
+#include <RTClib.h>
 #define DS3231_ADDRESS 0x68 // adresse  physique DS3231
-#define ONE_WIRE_BUS 5      // pin 5 for DS18B20/
+#define ONE_WIRE_BUS 5      // pin 5 pour le DS18B20/
 // var DS18B20
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // calcul soleil
-const double latitude = 47.65;
-const double longitude = -2.08;
+const double latitude = 47.6820104;
+const double longitude = -2.0178258;
 const int time_zone = +1; // paris
 double sunrisecal;        // Sunrise, en Heure (UTC)
 double transitcal;        // Solar transit, en Heure  (UTC)
@@ -35,6 +36,12 @@ int heurecoucherc;
 int minutecoucherc;
 int heuretransit;
 int minutetransit;
+// calcul lune
+
+int Heurelevermoon;
+int minutelevermoon;
+int heurecouchermoon;
+int minutecouchermoon;
 
 byte oldday;
 byte oldminute;
@@ -60,7 +67,7 @@ uint32_t kelvin; // initialisation kelvin
 // Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, DATA_PIN, NEO_RGB + NEO_KHZ800);
 Adafruit_NeoPixel pixels(NUM_LEDS, DATA_PIN, NEO_GRBW + NEO_KHZ800);
 unsigned long tempoled = 0;
-const long intervalled = 19000; // delai entre les changements couleur led 19 sec
+const long intervalled = 20300; // delai entre les changements couleur led 20 sec environ
 const long interval = 250;      // Change this value (ms)
 int setWhitePointRed;
 int setWhitePointGrn;
@@ -271,13 +278,13 @@ void whitesun() // ne gere que le white suivant l'heure de la journée partant d
   int minuteidxw;
   int heureidxw;
   time_t t = myRTC.get();
-  if ((hour(t) * 100 + minute(t) >= Heurelever * 100 + minutelever) && (hour(t) * 100 + minute(t) <= heuretransit * 100 + minutetransit))
+  if ((hour(t) * 60 + minute(t) >= Heurelever * 60 + minutelever) && (hour(t) * 60 + minute(t) <= heuretransit * 60 + minutetransit))
   {
     minuteidxw = map((minute(t)), 0, 59, 0, 10);
     heureidxw = map((hour(t)), Heurelever, heuretransit, 0, 90);
     Serial.print("idxW  AM: ");
   }
-  else if ((hour(t) * 100 + minute(t) <= heurecoucher * 100 + minutelever) && (hour(t) * 100 + minute(t) >= heuretransit * 100 + minutetransit))
+  else if ((hour(t) * 60 + minute(t) <= heurecoucher * 60 + minutelever) && (hour(t) * 60 + minute(t) >= heuretransit * 60 + minutetransit))
   {
     minuteidxw = map((minute(t)), 0, 59, 10, 0);
     heureidxw = map((hour(t)), heuretransit, heurecoucher, 90, 0);
@@ -288,7 +295,7 @@ void whitesun() // ne gere que le white suivant l'heure de la journée partant d
     heureidxw = 0;
     minuteidxw = 0;
   }
-  idxW = map((heureidxw + minuteidxw), 0, 100, 0, 255);
+  idxW = map((heureidxw + minuteidxw), 0, 100, 0, 254);
   Serial.println(idxW);
 }
 void nuitlune()
@@ -298,7 +305,7 @@ void nuitlune()
   ndiomoon = 7;
   colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
   execol = 0;
-  illune = map(illuminamoon, 0, 100, 0, 255);
+  illune = map(illuminamoon, 0, 100, 0, 254);
   colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: / intensity
   fineffect = true;
 }
@@ -393,7 +400,6 @@ void couchersoleil()
   }
   fineffect = true;
 }
-
 void leversoleil()
 {
   if (isunrise >= 3)
@@ -446,8 +452,8 @@ void leversoleil()
 // calcul aube/crepuscule
 void crepusculeaube()
 {
-  float centiemeaube = (Heurelever + (minutelever / 60.0)) - 0.25;        // decallage de l'horaire de -0.25 heure, aube
-  float centiemecoucher = (heurecoucher + (minutecoucher / 60.0)) + 0.50; // decallage de l'horaire de +0.50 heure, crepuscule
+  float centiemeaube = (Heurelever + (minutelever / 60.0)) - 0.66;        // decallage de l'horaire de -0.66 heure, aube moyenne annuel 40 minute
+  float centiemecoucher = (heurecoucher + (minutecoucher / 60.0)) + 0.66; // decallage de l'horaire de +0.66 heure, crepuscule
   Heureleverc = floor(centiemeaube);
   minuteleverc = (centiemeaube - Heureleverc) * 60;
   minuteleverc = minuteleverc % 60;
@@ -455,7 +461,7 @@ void crepusculeaube()
   minutecoucherc = (centiemecoucher - heurecoucherc) * 60;
   minutecoucherc = minutecoucherc % 60;
 }
-void commandeffect() //declanchement des effets suivant l'horaire en mode automatique
+void commandeffect() // declanchement des effets suivant l'horaire en mode automatique
 {
   crepusculeaube();
   time_t t = myRTC.get();
@@ -534,7 +540,7 @@ void commandeffect() //declanchement des effets suivant l'horaire en mode automa
 // Envoyer la couleur à la bande LED RGB mode manuel
 void led() // color led manuel
 {
-
+  whitesun();
   Serial.println("traitement Led manuel");
   colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(newRed, newGrn, newBlu, idxW));
 }
@@ -602,38 +608,38 @@ void calrgb()
       if (Heure == 7 && Minute <= 30)
       {
         // lever soleil avant 8 H si kelvin <1000 et > 400
-        newRed = map(30 + Heure, 0, 100, 0, sunLED[0]);
-        newGrn = map(30 + Heure, 0, 100, 0, sunLED[1]);
-        newBlu = map(30 + Heure, 0, 100, 0, sunLED[2]);
+        newRed = map(Heure * 60 + Minute, 7 * 60, 7 * 60 + 30, nightLED[0], sunLED[0]);
+        newGrn = map(Heure * 60 + Minute, 7 * 60, 7 * 60 + 30, nightLED[1], sunLED[1]);
+        newBlu = map(Heure * 60 + Minute, 7 * 60, 7 * 60 + 30, nightLED[2], sunLED[2]);
         Nbpixel = 3;
       }
-      if (Heure == 7 && Minute >= 30)
+      if (Heure == 7 && Minute >= 30) // jusqu'a 8h
       {
-        newRed = map(40 + Heure + Minute, 0, 100, 0, dayLED[0]);
-        newGrn = map(40 + Heure + Minute, 0, 100, 0, dayLED[1]);
-        newBlu = map(40 + Heure + Minute, 0, 100, 0, dayLED[2]);
+        newRed = map(Heure * 60 + Minute, 7 * 60 + 30, 8 * 60, sunLED[0], dayLED[0]);
+        newGrn = map(Heure * 60 + Minute, 7 * 60 + 30, 8 * 60, sunLED[1], dayLED[1]);
+        newBlu = map(Heure * 60 + Minute, 7 * 60 + 30, 8 * 60, sunLED[2], dayLED[2]);
         Nbpixel = 2;
       }
       if (Heure >= 8 && Heure <= 18)
       {
-        Nbpixel = 2; // nombre de pixels a eteindre
-        newRed = sunLED[0];
-        newGrn = sunLED[1]; // nuit noire
-        newBlu = sunLED[2];
+        Nbpixel = 1; // nombre de pixels a eteindre
+        newRed = dayLED[0];
+        newGrn = dayLED[1];
+        newBlu = dayLED[2];
       }
       if (Heure == 18 && Minute <= 30)
       {
-        // coucher soleil apres 18 H
-        newRed = map(88 - (Heure + Minute), 0, 100, 0, sunLED[0]);
-        newGrn = map(88 - (Heure + Minute), 0, 100, 0, sunLED[1]);
-        newBlu = map(88 - (Heure + Minute), 0, 100, 0, sunLED[2]);
+        // coucher soleil apres 18 H jusqu'a 18h30
+        newRed = map(18 * 60 + Minute, 18 * 60, 18 * 60 + 30, dayLED[0], sunLED[0]);
+        newGrn = map(18 * 60 + Minute, 18 * 60, 18 * 60 + 30, dayLED[1], sunLED[1]);
+        newBlu = map(18 * 60 + Minute, 18 * 60, 18 * 60 + 30, dayLED[2], sunLED[2]);
         Nbpixel = 2;
       } // couchersoleil apres 18h30
       if (Heure == 18 && Minute >= 30)
       {
-        newRed = map(88 - (Heure + Minute), 0, 100, 0, sunLED[0]);
-        newGrn = map(88 - (Heure + Minute), 0, 100, 0, sunLED[1]);
-        newBlu = map(88 - (Heure + Minute), 0, 100, 0, sunLED[2]);
+        newRed = map(18 * 60 + Minute, 18 * 60 + 30, 19 * 60, sunLED[0], nightLED[0]);
+        newGrn = map(18 * 60 + Minute, 18 * 60 + 30, 19 * 60, sunLED[1], nightLED[1]);
+        newBlu = map(18 * 60 + Minute, 18 * 60 + 30, 19 * 60, sunLED[2], nightLED[2]);
         Nbpixel = 3;
       }
       else
@@ -720,7 +726,6 @@ void sondetemperature()
     tempnexion.setText(temperatureCTemp);
   }
 }
-
 void luneimage()
 {
   // lune calcul
@@ -728,21 +733,42 @@ void luneimage()
   // il y a huit phases, 0 est la pleine lune et 4 est la nouvelle lune
   double jd = 0; // Julian Date
   double ed = 0; // jours écoulés depuis le début de la pleine lune
+  double *rise;
+  double *set;
   time_t t = myRTC.get();
-  // calcul lever/coucher soleil
-  calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal);
-  SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
-  Heurelever = hourscal;           // recupere l'heure convertie
-  minutelever = minutescal;        // recupere minutes convertie
-  Serial.print("Sunset/rise calculation:  ");
-  SunTime24h(toLocal(sunsetcal));
-  heurecoucher = hourscal;
-  minutecoucher = minutescal;
-  SunTime24h(toLocal(transitcal));
-  heuretransit = hourscal;
-  minutetransit = minutescal;
+
   if (day(t) != oldday)
-  { // calcul phasemoon
+  {
+    // calcul lever/coucher soleil
+    calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal);
+    SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
+    Heurelever = hourscal;           // recupere l'heure convertie
+    minutelever = minutescal;        // recupere minutes convertie
+    Serial.println("Sunset/rise calculation:  ");
+    SunTime24h(toLocal(sunsetcal));
+    heurecoucher = hourscal;
+    minutecoucher = minutescal;
+    SunTime24h(toLocal(transitcal));
+    heuretransit = hourscal;
+    minutetransit = minutescal;
+
+    // calcul lever/coucher lune
+    riseset(latitude, longitude, day(t), month(t), year(t), time_zone, rise, set); // lune lever et coucher calcul
+    Serial.println("Moonset/rise calculation:  ");
+    SunTime24h(toLocal(*rise));   // conversion en h et m locale
+    Heurelevermoon = hourscal;    // recupere l'heure convertie
+    minutelevermoon = minutescal; // recupere minutes convertie
+    SunTime24h(toLocal(*set));
+    heurecouchermoon = hourscal;
+    minutecouchermoon = minutescal;
+    Serial.print(Heurelevermoon);
+    Serial.print(":");
+    Serial.println(minutelevermoon);
+    Serial.print(heurecouchermoon);
+    Serial.print(":");
+    Serial.println(minutecouchermoon);
+
+    // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
     // jd = julianDate(1972,1,1); // utilisé pour déboguer ceci est une nouvelle lune
     jd = int(jd - 2244116.75); // commence le Jan 1 1972
