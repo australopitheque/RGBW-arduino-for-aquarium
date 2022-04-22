@@ -1,4 +1,4 @@
-# RGBW-Arduino Mega 2560-pour-aquarium
+# RGBW Arduino Mega 2560 pour aquarium
 Arduino mega 2560 et Strip LED SK6812 avec sunrise et moonphase sur un Nextion
 - Sketch pour arduino mega 2560 et SK6812
 - Gestion automatique de l'eclairage .
