@@ -328,8 +328,8 @@ static double moon_position(double j, double ls)
 extern double moon_phase(int year, int month, int day, double hour, int *ip)
 {
   /*
-    Calculates more accurately than Moon_phase , the phase of the moon at
-    the given epoch.
+    Calcule avec plus de précision la Moon_phase , la phase de la lune à
+    l'époque donnée.
   */
   double j, ls, lm, t;
   j = iauJuliandate(day, month, year) - 2444238.5;
