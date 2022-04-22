@@ -301,13 +301,19 @@ void whitesun() // ne gere que le white suivant l'heure de la journée partant d
 void nuitlune()
 {
   byte illune;
-  Serial.println(" VOL- - Clair de lune  ");
-  ndiomoon = 7;
-  colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
-  execol = 0;
-  illune = map(illuminamoon, 0, 100, 0, 254);
-  colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: / intensity
-  fineffect = true;
+  time_t t = myRTC.get();
+  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) || (hour(t) * 60 + minute(t) < heurecouchermoon * 60 + minutecouchermoon))
+  {                              // si heure lever lune ou avant heure coucher lune
+    Serial.println(" VOL- - Clair de lune  ");
+    ndiomoon = 7;
+    colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
+    execol = 0;
+    illune = map(illuminamoon, 0, 100, 0, 254);
+    colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: / intensity
+    fineffect = true;
+  }
+  else
+    colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
 }
 void journee()
 {
@@ -650,7 +656,7 @@ void calrgb()
         newRed = 0;
         newGrn = 0;
         newBlu = 0;
-      } 
+      }
     }
     else if (kelvin < 400)
     {
@@ -678,7 +684,7 @@ void calrgb()
       }
     }
     oldkelvin = kelvin;
-  } 
+  }
 }
 double julianDate(int y, int m, int d)
 {
@@ -736,7 +742,7 @@ void luneimage()
     SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
     Heurelever = hourscal;           // recupere l'heure convertie
     minutelever = minutescal;        // recupere minutes convertie
-     SunTime24h(toLocal(sunsetcal));
+    SunTime24h(toLocal(sunsetcal));
     heurecoucher = hourscal;
     minutecoucher = minutescal;
     SunTime24h(toLocal(transitcal));

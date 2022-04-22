@@ -328,8 +328,8 @@ static double moon_position(double j, double ls)
 extern double moon_phase(int year, int month, int day, double hour, int *ip)
 {
   /*
-    Calcule avec plus de précision la Moon_phase , la phase de la lune à
-    l'époque donnée.
+    Calcule avec plus de précision la Moon_phase , 
+    la phase de la lune à l'époque donnée.
   */
   double j, ls, lm, t;
   j = iauJuliandate(day, month, year) - 2444238.5;
@@ -339,9 +339,9 @@ extern double moon_phase(int year, int month, int day, double hour, int *ip)
   if (t < 0)
     t += 360;
   *ip = (int)((t + 22.5) / 45) & 0x7;
-  return (1.0 - cos((lm - ls) * RAD)) / 2;
+  return (1.0 - cos((lm - ls) * RAD)) / 2; //c'est la proportion d'éclairage calculée à partir de `lm-ls`, l'angle de phase
 }
-// check for no moonrise and/or no moonset
+// vérifier l'absence de lever de lune et/ou de coucher de lune
 extern int moon_vis(int hr,int mn) {
   int riseMin=(Rise_time[0]*60)+Rise_time[1];
   int setMin=(Set_time[0]*60)+Set_time[1];
