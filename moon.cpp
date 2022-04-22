@@ -15,8 +15,7 @@
  * in main() according to the desired location.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <math.h>
 #include <Arduino.h>
 

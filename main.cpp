@@ -9,7 +9,7 @@
 #include <HardwareSerial.h>
 #include <SolarCalculator.h>
 #include "moon.h"
-#include <RTClib.h>
+
 #define DS3231_ADDRESS 0x68 // adresse  physique DS3231
 #define ONE_WIRE_BUS 5      // pin 5 pour le DS18B20/
 // var DS18B20
@@ -43,8 +43,8 @@ int minutelevermoon;
 int heurecouchermoon;
 int minutecouchermoon;
 
-byte oldday;
-byte oldminute;
+byte oldday = 0;
+byte oldminute = 0;
 
 int dayLED[] = {255, 255, 255, 255}; // kelvin dans la journée
 int nightLED[] = {0, 3, 15, 0};      // 15, 5, 107 nuit lunaire
@@ -468,26 +468,29 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
   if ((hour(t) * 60 + minute(t) >= Heureleverc * 60 + minuteleverc) && (hour(t) * 60 + minute(t) < Heurelever * 60 + minutelever + 120))
   { // test si heure lever -.5 (aube) et si 2h apres lever
     effect = "leversoleil";
+    Serial.println("lever soleil effet");
     fineffect = false;
   }
   else if ((hour(t) * 60 + minute(t) >= heurecoucher * 60 + minutecoucher - 120) && (hour(t) * 60 + minute(t) <= heurecoucherc * 60 + minutecoucherc))
-  { // si 1h avant heure coucher et si heure coucher +.5 (crepuscule)
+  { // si 2h avant heure coucher et si heure coucher +(crepuscule)
     effect = "couchersoleil";
+    Serial.println("coucher soleil effet");
     fineffect = false;
   }
-  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120) && ((isunrise == 0) || (isunset == 1356)))
+  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120))
   { // si 2h avant heure coucher et si 2h apres heure lever
     effect = "jours";
+    Serial.println("jours soleil effet");
     fineffect = false;
   }
   else if ((hour(t) * 60 + minute(t) <= Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) > heurecoucherc * 60 + minutecoucherc))
   { // si avant heure lever ou si apres heure coucher
     effect = "lune";
+    Serial.println("lancement lune effet");
     fineffect = false;
   }
   if ((ModeAuto == 1) && (fineffect == false))
   {
-    // Serial.println("Mode Auto"); debug du passage en auto vers manuel
     if (effect == "StandBye")
     {
       fineffect = true;
@@ -541,7 +544,7 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
 void led() // color led manuel
 {
   whitesun();
-  Serial.println("traitement Led manuel");
+  Serial.println("traitement Led ");
   colorWipe(pixels.numPixels() / Nbpixel, pixels.Color(newRed, newGrn, newBlu, idxW));
 }
 uint32_t oldkelvin;
@@ -647,13 +650,7 @@ void calrgb()
         newRed = 0;
         newGrn = 0;
         newBlu = 0;
-      }
-      Serial.print("Minute :");
-      Serial.println(Minute);
-      Serial.print("Heure :");
-      Serial.println(Heure);
-      Serial.print("Nbpixel :");
-      Serial.println(Nbpixel);
+      } 
     }
     else if (kelvin < 400)
     {
@@ -681,12 +678,7 @@ void calrgb()
       }
     }
     oldkelvin = kelvin;
-  }
-  Serial.print("Calcul RGB : ");
-  Serial.println(kelvin);
-  Serial.println(newRed);
-  Serial.println(newGrn);
-  Serial.println(newBlu);
+  } 
 }
 double julianDate(int y, int m, int d)
 {
@@ -736,7 +728,7 @@ void luneimage()
   double *rise;
   double *set;
   time_t t = myRTC.get();
-
+  Serial.println("luneimage");
   if (day(t) != oldday)
   {
     // calcul lever/coucher soleil
@@ -744,8 +736,7 @@ void luneimage()
     SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
     Heurelever = hourscal;           // recupere l'heure convertie
     minutelever = minutescal;        // recupere minutes convertie
-    Serial.println("Sunset/rise calculation:  ");
-    SunTime24h(toLocal(sunsetcal));
+     SunTime24h(toLocal(sunsetcal));
     heurecoucher = hourscal;
     minutecoucher = minutescal;
     SunTime24h(toLocal(transitcal));
@@ -754,20 +745,14 @@ void luneimage()
 
     // calcul lever/coucher lune
     riseset(latitude, longitude, day(t), month(t), year(t), time_zone, rise, set); // lune lever et coucher calcul
-    Serial.println("Moonset/rise calculation:  ");
-    SunTime24h(toLocal(*rise));   // conversion en h et m locale
-    Heurelevermoon = hourscal;    // recupere l'heure convertie
-    minutelevermoon = minutescal; // recupere minutes convertie
+    SunTime24h(toLocal(*rise));                                                    // conversion en h et m locale
+    Heurelevermoon = hourscal;                                                     // recupere l'heure convertie
+    minutelevermoon = minutescal;                                                  // recupere minutes convertie
     SunTime24h(toLocal(*set));
     heurecouchermoon = hourscal;
     minutecouchermoon = minutescal;
-    Serial.print(Heurelevermoon);
-    Serial.print(":");
-    Serial.println(minutelevermoon);
-    Serial.print(heurecouchermoon);
-    Serial.print(":");
-    Serial.println(minutecouchermoon);
 
+    delay(200);
     // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
     // jd = julianDate(1972,1,1); // utilisé pour déboguer ceci est une nouvelle lune
@@ -780,52 +765,52 @@ void luneimage()
     NumPhase = jd * 8 + 0.5;
     NumPhase = NumPhase & 7;
     oldday = day(t);
+
+    // affichage phase de la lune
+    if (NumPhase >= 0 && NumPhase <= 7)
+    {
+      if (NumPhase == 0)
+      {
+        lune.setPic(5);
+        illuminamoon = 100;
+      }
+      else if (NumPhase == 1)
+      {
+        lune.setPic(6);
+        illuminamoon = 76;
+      }
+      else if (NumPhase == 2)
+      {
+        lune.setPic(7);
+        illuminamoon = 41;
+      }
+      else if (NumPhase == 3)
+      {
+        lune.setPic(8);
+        illuminamoon = 12;
+      }
+      else if (NumPhase == 4)
+      {
+        lune.setPic(9);
+        illuminamoon = 0;
+      }
+      else if (NumPhase == 5)
+      {
+        lune.setPic(10);
+        illuminamoon = 18;
+      }
+      else if (NumPhase == 6)
+      {
+        lune.setPic(11);
+        illuminamoon = 55;
+      }
+      else if (NumPhase == 7)
+      {
+        lune.setPic(12);
+        illuminamoon = 90;
+      }
+    }
   }
-  // affichage phase de la lune
-  if (NumPhase >= 0 && NumPhase <= 7)
-  {
-    if (NumPhase == 0)
-    {
-      lune.setPic(5);
-      illuminamoon = 100;
-    }
-    else if (NumPhase == 1)
-    {
-      lune.setPic(6);
-      illuminamoon = 76;
-    }
-    else if (NumPhase == 2)
-    {
-      lune.setPic(7);
-      illuminamoon = 41;
-    }
-    else if (NumPhase == 3)
-    {
-      lune.setPic(8);
-      illuminamoon = 12;
-    }
-    else if (NumPhase == 4)
-    {
-      lune.setPic(9);
-      illuminamoon = 0;
-    }
-    else if (NumPhase == 5)
-    {
-      lune.setPic(10);
-      illuminamoon = 18;
-    }
-    else if (NumPhase == 6)
-    {
-      lune.setPic(11);
-      illuminamoon = 55;
-    }
-    else if (NumPhase == 7)
-    {
-      lune.setPic(12);
-      illuminamoon = 90;
-    }
-  }
-  Serial.println("Affichage de la phase de la lune:");
 }
 // display time, date
 void display() // heure page 0
@@ -859,7 +844,6 @@ void display() // heure page 0
   {
     date.setText("pas DS3231");
   }
-  Serial.println("Affichage Heure");
 }
 // traitement des pages/boutons surveillés
 /*
@@ -872,7 +856,6 @@ void pmenupush(void *ptr) // traitement page 0
     sondetemperature();
     display();
     calrgb();
-    luneimage();
     if (ModeAuto == true)
     {
       commandeffect();
@@ -881,6 +864,7 @@ void pmenupush(void *ptr) // traitement page 0
     {
       led();
     }
+    luneimage();
   }
 }
 void reglageheurepop(void *ptr)
@@ -895,11 +879,13 @@ void boutonmodeonoff(void *ptr)
   {
     ModeAuto = true;
     Serial.println("true");
+    Serial.println("traitement mode Automatique");
   }
   else
   {
     ModeAuto = false;
     Serial.println("false");
+    Serial.println("traitement mode Manuel");
   }
 }
 void p1PopCallback(void *ptr) // traitement page 1
@@ -941,7 +927,6 @@ void enrsettingPopCallback(void *ptr) // traitement bouton enr de la page 2
     Serial.println(F("Erreur !"));  // debug
   else
   {
-    // Serial.println(F("Début traitement Date")); // debug
     if (Annee >= 1000)
       tm.Year = CalendarYrToTm(Annee); // si annee superieur a 1000 deduit 1970 (annee de defaut ds331)
     else                               // (y < 100)
