@@ -761,11 +761,7 @@ void luneimage()
     SunTime24h(toLocal(*set));
     heurecouchermoon = hourscal;
     minutecouchermoon = minutescal;
-    Serial.print("levermoon: ");
-    Serial.print(Heurelevermoon);
-    Serial.print(" : ");
-    Serial.println(minutelevermoon);
-    delay(200);
+
     // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
     // jd = julianDate(1972,1,1); // utilisé pour déboguer ceci est une nouvelle lune
