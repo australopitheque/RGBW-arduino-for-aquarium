@@ -226,7 +226,7 @@ extern void riseset(const double lat, const double lon, const int day,
   int zone = round(TimezoneOffset / 60);
   double ph, jd, tz, t0, mp[3][3], lon_local;
   /* guide : le jour julien a été converti de double en int */
-  jd = (iauJuliandate(day, month, year)) - 2451546; /* Jour julien relatif à Jan 1.5, 2000 */
+  jd = (iauJuliandate(day, month, year)) - 2451545; /* Jour julien relatif à Jan 1.5, 2000 */
   lon_local = lon;
   for (i = 0; i < 3; i++)
   {

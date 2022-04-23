@@ -139,6 +139,10 @@ NexNumber nexHlever(next, 0, 17, "Hlever");
 NexNumber nexMlever(next, 0, 18, "Mlever");
 NexNumber nexHcoucher(next, 0, 19, "Hcoucher");
 NexNumber nexMcoucher(next, 0, 20, "Mcoucher");
+NexNumber nexHlevermoon(next, 0, 24, "hlmoon");
+NexNumber nexMlevermoon(next, 0, 25, "mlmoon");
+NexNumber nexHcouchermoon(next, 0, 26, "hcmoon");
+NexNumber nexMcouchermoon(next, 0, 27, "mcmoon");
 
 // texte modifiable page 2 qui sera appeler quand le Nextion sera sur cette page
 NexNumber joursetting(next, 2, 4, "day");
@@ -303,7 +307,7 @@ void nuitlune()
   byte illune;
   time_t t = myRTC.get();
   if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) || (hour(t) * 60 + minute(t) < heurecouchermoon * 60 + minutecouchermoon))
-  {                              // si heure lever lune ou avant heure coucher lune
+  { // si heure lever lune ou avant heure coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
@@ -757,7 +761,10 @@ void luneimage()
     SunTime24h(toLocal(*set));
     heurecouchermoon = hourscal;
     minutecouchermoon = minutescal;
-
+    Serial.print("levermoon: ");
+    Serial.print(Heurelevermoon);
+    Serial.print(" : ");
+    Serial.println(minutelevermoon);
     delay(200);
     // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
@@ -819,7 +826,7 @@ void luneimage()
   }
 }
 // display time, date
-void display() // heure page 0
+void heurepage0() // heure page 0
 {
   byte Hour;
   byte Minute;
@@ -841,10 +848,16 @@ void display() // heure page 0
     heuremenu.setValue(Hour);
     minutemenu.setValue(Minute);
     secondemenu.setValue(Second);
+    // partie affichage horaire solaire
     nexHlever.setValue(Heurelever);
     nexMlever.setValue(minutelever);
     nexHcoucher.setValue(heurecoucher);
     nexMcoucher.setValue(minutecoucher);
+    // partie affichage horaire lunaire
+    nexHlevermoon.setValue(Heurelevermoon);
+    nexMlevermoon.setValue(minutelevermoon);
+    nexHcouchermoon.setValue(heurecouchermoon);
+    nexMcouchermoon.setValue(minutecouchermoon);
   }
   else
   {
@@ -860,7 +873,7 @@ void pmenupush(void *ptr) // traitement page 0
   {                                 // si compteur atteind 1/2 sec
     roulementPrecedent1 = millis(); // reinitialise le compteur
     sondetemperature();
-    display();
+    heurepage0();
     calrgb();
     if (ModeAuto == true)
     {
@@ -973,8 +986,8 @@ void setup(void)
   {
     Serial.println("nextion init fails");
   }
-  delay(100); // delai initiaisation nextion
-              // surveillance des boutons
+  luneimage();
+  // surveillance des boutons
   // paramkelvin.attachPop(kelvinpush, &paramkelvin);
   pmenu.attachPop(pmenupush, &pmenu);
   reglageheure.attachPop(reglageheurepop, &reglageheure);
