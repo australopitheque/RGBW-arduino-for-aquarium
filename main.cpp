@@ -261,6 +261,8 @@ void colorWipe(uint32_t nPix, uint32_t col)
 {
   Serial.print("col :");
   Serial.println(col);
+  Serial.print("oldcol :");
+  Serial.println(oldcol);
   Serial.print("execol ");
   Serial.println(execol);
   if (execol == 0)
@@ -306,8 +308,9 @@ void nuitlune()
 {
   byte illune;
   time_t t = myRTC.get();
-  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) || (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon))
-  { // si heure lever lune ou avant heure coucher lune
+  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) 
+  || (hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon && Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon))
+  { // si heure lever lune ou avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
@@ -318,6 +321,8 @@ void nuitlune()
   }
   else
   {
+    oldcol = 1; // force l'extinction
+    execol = 0;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
     fineffect = true;
   }
