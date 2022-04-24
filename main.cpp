@@ -306,18 +306,21 @@ void nuitlune()
 {
   byte illune;
   time_t t = myRTC.get();
-  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) || (hour(t) * 60 + minute(t) < heurecouchermoon * 60 + minutecouchermoon))
+  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) || (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon))
   { // si heure lever lune ou avant heure coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
     execol = 0;
     illune = map(illuminamoon, 0, 100, 0, 254);
-    colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: / intensity
+    colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: /intensity
     fineffect = true;
   }
   else
+  {
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
+    fineffect = true;
+  }
 }
 void journee()
 {
@@ -493,7 +496,7 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
     Serial.println("jours soleil effet");
     fineffect = false;
   }
-  else if ((hour(t) * 60 + minute(t) <= Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) > heurecoucherc * 60 + minutecoucherc))
+  else if ((hour(t) * 60 + minute(t) > Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) < heurecoucherc * 60 + minutecoucherc))
   { // si avant heure lever ou si apres heure coucher
     effect = "lune";
     Serial.println("lancement lune effet");
@@ -521,11 +524,6 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
         tempoled = millis(); // reinitialise le compteur
         execol = 0;
         nuitlune();
-        if (fineffect == true)
-        {
-          effect = "StandBye";
-          fineffect = false;
-        }
       }
     }
     if (effect == "leversoleil")
