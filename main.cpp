@@ -308,8 +308,7 @@ void nuitlune()
 {
   byte illune;
   time_t t = myRTC.get();
-  if ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) 
-  || (hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon && Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon))
+  if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon)) || ((hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon) && (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon)))
   { // si heure lever lune ou avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
@@ -420,7 +419,7 @@ void couchersoleil()
 }
 void leversoleil()
 {
-  if (isunrise >= 3)
+  if (isunrise > 2)
   {
     isunrise -= 3;
     whitesun();
