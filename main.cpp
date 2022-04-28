@@ -314,8 +314,8 @@ void nuitlune()
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
     execol = 0;
-    illune = map(illuminamoon, 0, 100, 0, 254);
-    colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune, 0)); // si besoin de diminuer la luminosité lune rajouter apres ilune: /intensity
+    illune = map(illuminamoon, 0, 100, 0, 128);
+    colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune / intensity, 0));
     fineffect = true;
   }
   else
@@ -494,7 +494,7 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
     Serial.println("coucher soleil effet");
     fineffect = false;
   }
-  else if ((hour(t) * 60 + minute(t) > Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) < heurecoucher * 60 + minutecoucher - 120))
+  else if ((hour(t) * 60 + minute(t) >= Heurelever * 60 + minutelever + 120) && (hour(t) * 60 + minute(t) <= heurecoucher * 60 + minutecoucher - 120))
   { // si 2h avant heure coucher et si 2h apres heure lever
     effect = "jours";
     Serial.println("jours soleil effet");
