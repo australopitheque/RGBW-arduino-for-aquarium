@@ -13,5 +13,5 @@ Arduino mega 2560 et Strip LED SK6812 avec sunrise et moonphase sur un Nextion
 - le soleil lui reste en automatique.
   
 ![alt text](https://github.com/australopitheque/RGBW-arduino-for-aquarium/blob/main/kelvin%20reglage.jpg)
-
+- Réglage du RTC DS3231
 ![alt text](https://github.com/australopitheque/RGBW-arduino-for-aquarium/blob/main/reglage%20heure.jpg)
