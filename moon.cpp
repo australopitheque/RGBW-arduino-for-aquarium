@@ -17,7 +17,6 @@
 
 
 #include <math.h>
-#include <Arduino.h>
 
 static double Sky[3] = {0.0, 0.0, 0.0};
 static double Dec[3] = {0.0, 0.0, 0.0};
