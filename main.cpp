@@ -143,6 +143,7 @@ NexNumber heuremenu(next, 0, 6, "h0");
 NexNumber minutemenu(next, 0, 7, "m0");
 NexNumber secondemenu(next, 0, 8, "s0");
 NexNumber luxkelvin(next, 0, 13, "kelvin");
+NexText textekelvinauto(next, 0, 14, "t3");
 NexPicture lune(next, 0, 3, "p0");
 NexNumber nexHlever(next, 0, 17, "Hlever");
 NexNumber nexMlever(next, 0, 18, "Mlever");
@@ -237,7 +238,7 @@ byte illuminamoon;
 int isunrise = 1356;
 int isunset = 0;
 String effect = "jour";
-boolean ModeAuto = 1; // initialisation mode automatique on par defaut
+boolean ModeAuto = 1; // initialisation mode automatique "On" par defaut
 int NumPhase = 0;
 boolean fineffect = false;
 uint32_t execol;
@@ -245,7 +246,7 @@ double toLocal(double utc)
 {
   time_t t = myRTC.get();
   byte phete;
-  byte phhiver;
+  byte phhiver; // calcul heure d'ete/hivers
 
   phete = 25 + (7002 - (year(t)) - int((year(t)) / 4)) % 7;
   phhiver = 25 + (7005 - (year(t)) - int((year(t)) / 4)) % 7;
@@ -268,12 +269,6 @@ void SunTime24h(double h)
 uint32_t oldcol;
 void colorWipe(uint32_t nPix, uint32_t col)
 {
-  Serial.print("col :");
-  Serial.println(col);
-  Serial.print("oldcol :");
-  Serial.println(oldcol);
-  Serial.print("execol ");
-  Serial.println(execol);
   if (execol == 0)
   {
     if (col != oldcol)
@@ -968,7 +963,7 @@ void heurepage0() // heure page 0
 // traitement des pages/boutons surveillés
 /*
  */
-void pmenupush(void *ptr) // traitement page 0
+void pmenupush(void *ptr) // traitement bouton parametre page 0
 {
   if (millis() - roulementPrecedent1 > refreshSwitch)
   {                                 // si compteur atteind 1/2 sec
@@ -978,10 +973,14 @@ void pmenupush(void *ptr) // traitement page 0
     calrgb();
     if (ModeAuto == true)
     {
+      luxkelvin.Set_font_color_pco(0);
+      textekelvinauto.setText("A");
       commandeffect();
     }
     else
     {
+      luxkelvin.Set_font_color_pco(65504);
+      textekelvinauto.setText("K");
       led();
     }
     luneimage();
@@ -998,14 +997,16 @@ void boutonmodeonoff(void *ptr)
   if (dual_state)
   {
     ModeAuto = true;
-    Serial.println("true");
     Serial.println("traitement mode Automatique");
+    luxkelvin.Set_font_color_pco(0);
+    textekelvinauto.setText("A");
   }
   else
   {
     ModeAuto = false;
-    Serial.println("false");
     Serial.println("traitement mode Manuel");
+    luxkelvin.Set_font_color_pco(65504);
+    textekelvinauto.setText("K");
   }
 }
 void p1PopCallback(void *ptr) // traitement page 1
@@ -1086,6 +1087,16 @@ void setup(void)
   if (!next->nexInit(115200))
   {
     Serial.println("nextion init fails");
+  }
+  if (ModeAuto == true)
+  {
+    luxkelvin.Set_font_color_pco(0);
+    textekelvinauto.setText("A");
+  }
+  else
+  {
+    luxkelvin.Set_font_color_pco(65504);
+    textekelvinauto.setText("K");
   }
   luneimage();
   // surveillance des boutons
