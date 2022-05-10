@@ -36,12 +36,21 @@ int heurecoucherc;
 int minutecoucherc;
 int heuretransit;
 int minutetransit;
-// calcul lune
 
+// calcul lune
 int Heurelevermoon;
 int minutelevermoon;
 int heurecouchermoon;
 int minutecouchermoon;
+int Heurelevermoonloc;
+int minutelevermoonloc;
+int heurecouchermoonloc;
+int minutecouchermoonloc;
+byte daymoonlever;
+byte daymooncoucher;
+byte decalageetehiver;
+byte moonleverday = 0;
+byte mooncoucherday = 0;
 
 byte oldday = 0;
 byte oldminute = 0;
@@ -237,18 +246,18 @@ double toLocal(double utc)
   time_t t = myRTC.get();
   byte phete;
   byte phhiver;
-  byte decalageetehiver;
-  phete = 25 + (7002 - (year(t)) - int((year(t)) / 4)) % 7;   // dernier jour été Mars
-  phhiver = 25 + (7005 - (year(t)) - int((year(t)) / 4)) % 7; // dernier jour hiver octobre
-  if ((month(t) >= 4) || ((month(t) == 3) && (day(t) == 31 - phete)))
+
+  phete = 25 + (7002 - (year(t)) - int((year(t)) / 4)) % 7;
+  phhiver = 25 + (7005 - (year(t)) - int((year(t)) / 4)) % 7;
+  if ((month(t) >= 4) || ((month(t) == 3) && (day(t) == 31 - phete))) // dernier jour été Mars
   {
     decalageetehiver = 1;
   }
-  if ((month(t) >= 11) || ((month(t) == 10) && (day(t) == 31 - phhiver)))
+  if ((month(t) >= 11) || ((month(t) == 10) && (day(t) == 31 - phhiver))) // dernier jour hiver octobre
   {
     decalageetehiver = 0;
   }
-  return utc + time_zone + decalageetehiver;
+  return utc;
 }
 void SunTime24h(double h)
 {
@@ -308,7 +317,27 @@ void nuitlune()
 {
   byte illune;
   time_t t = myRTC.get();
-  if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon)) || ((hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon) && (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon)))
+  if ((moonleverday == -1) || (mooncoucherday == -1))
+  {
+    if (moonleverday == -1)
+    {             // pas de lever lune
+      oldcol = 1; // force l'extinction
+      execol = 0;
+      colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
+      fineffect = true;
+    }
+    else
+    { // lune ou lune pas de coucher
+      Serial.println(" VOL- - Clair de lune sans coucher ");
+      ndiomoon = 7;
+      colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
+      execol = 0;
+      illune = map(illuminamoon, 0, 100, 0, 128);
+      colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune / intensity, 0));
+      fineffect = true;
+    }
+  }
+  else if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) && (moonleverday != -1 || mooncoucherday != -1)) || ((hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon) && (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon) && (moonleverday != -1 || mooncoucherday != -1)))
   { // si heure lever lune ou avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
@@ -316,13 +345,6 @@ void nuitlune()
     execol = 0;
     illune = map(illuminamoon, 0, 100, 0, 128);
     colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune / intensity, 0));
-    fineffect = true;
-  }
-  else
-  {
-    oldcol = 1; // force l'extinction
-    execol = 0;
-    colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
     fineffect = true;
   }
 }
@@ -745,24 +767,84 @@ void luneimage()
   {
     // calcul lever/coucher soleil
     calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal);
-    SunTime24h(toLocal(sunrisecal)); // conversion en h et m locale
-    Heurelever = hourscal;           // recupere l'heure convertie
-    minutelever = minutescal;        // recupere minutes convertie
-    SunTime24h(toLocal(sunsetcal));
+    SunTime24h(toLocal(sunrisecal) + time_zone + decalageetehiver); // conversion en h et m locale
+    Heurelever = hourscal;                                          // recupere l'heure convertie
+    minutelever = minutescal;                                       // recupere minutes convertie
+    SunTime24h(toLocal(sunsetcal) + time_zone + decalageetehiver);
     heurecoucher = hourscal;
     minutecoucher = minutescal;
-    SunTime24h(toLocal(transitcal));
+    SunTime24h(toLocal(transitcal) + time_zone + decalageetehiver);
     heuretransit = hourscal;
     minutetransit = minutescal;
 
     // calcul lever/coucher lune
     riseset(latitude, longitude, day(t), month(t), year(t), time_zone, rise, set); // lune lever et coucher calcul
-    SunTime24h(toLocal(*rise));                                                    // conversion en h et m locale
-    Heurelevermoon = hourscal;                                                     // recupere l'heure convertie
-    minutelevermoon = minutescal;                                                  // recupere minutes convertie
+    SunTime24h(toLocal(*rise));                                                    // conversion en h et m
+
+    Heurelevermoon = hourscal;    // recupere l'heure convertie
+    minutelevermoon = minutescal; // recupere minutes convertie
+
+    if (((Heurelevermoon + time_zone + decalageetehiver) >= 24) && (minutelevermoon >= 00)) // lever pour j+1 en H et m locale
+    {
+      if (moonleverday == day(t))
+      {
+        int Heurelevermoontemp;
+        int minutelevermoontemp;
+        Heurelevermoontemp = Heurelevermoon + time_zone + decalageetehiver - 24; // stockage temporaire m calculer
+        minutelevermoontemp = minutelevermoon;                                   // stockage temporaire m calculer
+        Heurelevermoon = Heurelevermoonloc;                                      // recupere h stocker pour affichage
+        minutelevermoon = minutelevermoonloc;
+        Heurelevermoonloc = Heurelevermoontemp; // stock la nouvelle h depassant 24h calculer
+        minutelevermoonloc = minutelevermoontemp;
+        moonleverday = day(t) + 1; // indique depassement de la journée
+                                   // attention peut depasser le jours du mois
+      }
+      else
+      {
+        Heurelevermoonloc = Heurelevermoon + time_zone + decalageetehiver - 24; /// stocke h calculer depassant 24h
+        minutelevermoonloc = minutelevermoon;
+        moonleverday = day(t) + 1; // indique depassement de la journée
+        Heurelevermoon = -1;       // annule heure afficher
+        minutelevermoon = -1;
+      }
+    }
+    else
+    {
+      Heurelevermoon = Heurelevermoon + time_zone + decalageetehiver;
+      moonleverday = day(t);
+    }
+
     SunTime24h(toLocal(*set));
     heurecouchermoon = hourscal;
     minutecouchermoon = minutescal;
+    if (((heurecouchermoon + time_zone + decalageetehiver) >= 24) && (minutecouchermoon >= 00)) // lever pour j+1 en H et m locale
+    {
+      if (mooncoucherday == day(t))
+      {
+        int Heurecouchermoontemp;
+        int minutecouchermoontemp;
+        Heurecouchermoontemp = heurecouchermoon + time_zone + decalageetehiver - 24; // stockage temporaire m calculer
+        minutecouchermoontemp = minutecouchermoon;                                   // stockage temporaire m calculer
+        heurecouchermoon = heurecouchermoonloc;                                      // recupere h stocker pour affichage
+        minutecouchermoon = minutecouchermoonloc;
+        heurecouchermoonloc = Heurecouchermoontemp; // stock la nouvelle h depassant 24h calculer
+        minutecouchermoonloc = minutecouchermoontemp;
+        mooncoucherday = day(t) + 1; // indique depassement de la journée
+      }
+      else
+      {
+        heurecouchermoonloc = heurecouchermoon + time_zone + decalageetehiver - 24; /// stocke h calculer depassant 24h
+        minutecouchermoonloc = minutecouchermoon;
+        mooncoucherday = day(t) + 1; // indique depassement de la journée
+        heurecouchermoon = -1;       // annule heure afficher
+        minutecouchermoon = -1;
+      }
+    }
+    else
+    {
+      heurecouchermoon = heurecouchermoon + time_zone + decalageetehiver;
+      mooncoucherday = day(t);
+    }
 
     // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
@@ -852,10 +934,31 @@ void heurepage0() // heure page 0
     nexHcoucher.setValue(heurecoucher);
     nexMcoucher.setValue(minutecoucher);
     // partie affichage horaire lunaire
-    nexHlevermoon.setValue(Heurelevermoon);
-    nexMlevermoon.setValue(minutelevermoon);
-    nexHcouchermoon.setValue(heurecouchermoon);
-    nexMcouchermoon.setValue(minutecouchermoon);
+    if (Heurelevermoon != -1)
+    {
+      nexHlevermoon.Set_font_color_pco(0);
+      nexHlevermoon.setValue(Heurelevermoon);
+      nexMlevermoon.Set_font_color_pco(0);
+      nexMlevermoon.setValue(minutelevermoon);
+    }
+    else
+    {
+      nexHlevermoon.Set_font_color_pco(65535);
+      nexMlevermoon.Set_font_color_pco(65535);
+    }
+    if (heurecouchermoon != -1)
+    {
+
+      nexHcouchermoon.Set_font_color_pco(0);
+      nexHcouchermoon.setValue(heurecouchermoon);
+      nexMcouchermoon.Set_font_color_pco(0);
+      nexMcouchermoon.setValue(minutecouchermoon);
+    }
+    else
+    {
+      nexHcouchermoon.Set_font_color_pco(65535);
+      nexMcouchermoon.Set_font_color_pco(65535);
+    }
   }
   else
   {
