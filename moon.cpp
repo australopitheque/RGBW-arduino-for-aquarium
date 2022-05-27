@@ -15,7 +15,6 @@
  * in main() according to the desired location.
  */
 
-
 #include <math.h>
 
 static double Sky[3] = {0.0, 0.0, 0.0};
@@ -23,6 +22,7 @@ static double Dec[3] = {0.0, 0.0, 0.0};
 static double VHz[3] = {0.0, 0.0, 0.0};
 static double RAn[3] = {0.0, 0.0, 0.0};
 
+#define PI 3.14159265358979323846
 const static double DR = M_PI / 180;
 const static double K1 = 15 * M_PI * 1.0027379 / 180;
 static double Rise_az = 0.0, Set_az = 0.0;
@@ -327,7 +327,7 @@ static double moon_position(double j, double ls)
 extern double moon_phase(int year, int month, int day, double hour, int *ip)
 {
   /*
-    Calcule avec plus de précision la Moon_phase , 
+    Calcule avec plus de précision la Moon_phase ,
     la phase de la lune à l'époque donnée.
   */
   double j, ls, lm, t;
@@ -338,29 +338,40 @@ extern double moon_phase(int year, int month, int day, double hour, int *ip)
   if (t < 0)
     t += 360;
   *ip = (int)((t + 22.5) / 45) & 0x7;
-  return (1.0 - cos((lm - ls) * RAD)) / 2; //c'est la proportion d'éclairage calculée à partir de `lm-ls`, l'angle de phase
+  return (1.0 - cos((lm - ls) * RAD)) / 2; // c'est la proportion d'éclairage calculée à partir de `lm-ls`, l'angle de phase
 }
 // vérifier l'absence de lever de lune et/ou de coucher de lune
-extern int moon_vis(int hr,int mn) {
-  int riseMin=(Rise_time[0]*60)+Rise_time[1];
-  int setMin=(Set_time[0]*60)+Set_time[1];
-  int nowMin=(hr*60)+mn;
-  if ((!Moonrise) && (!Moonset)) { // ni lever ni coucher de lune
-    if (VHz[2] < 0) return(0); // en bas toute la journée
-    else return(1); // debout toute la journée
-    }
-
-  if (Moonrise && Moonset) {
-    if ((setMin > riseMin) && (riseMin < nowMin) && (nowMin < setMin)) return(1); // up
-    if ((setMin < riseMin) && ((nowMin < setMin) || (nowMin > riseMin))) return(1); // up
+extern int moon_vis(int hr, int mn)
+{
+  int riseMin = (Rise_time[0] * 60) + Rise_time[1];
+  int setMin = (Set_time[0] * 60) + Set_time[1];
+  int nowMin = (hr * 60) + mn;
+  if ((!Moonrise) && (!Moonset))
+  { // ni lever ni coucher de lune
+    if (VHz[2] < 0)
+      return (0); // en bas toute la journée
+    else
+      return (1); // debout toute la journée
   }
 
-  if (Moonrise && (!Moonset)) { // Lever de lune seulement
-    if (nowMin > riseMin) return(1);
+  if (Moonrise && Moonset)
+  {
+    if ((setMin > riseMin) && (riseMin < nowMin) && (nowMin < setMin))
+      return (1); // up
+    if ((setMin < riseMin) && ((nowMin < setMin) || (nowMin > riseMin)))
+      return (1); // up
   }
 
-  if (Moonset && (!Moonrise)) { // Coucher de lune seulement
-    if (nowMin < setMin) return(1);
+  if (Moonrise && (!Moonset))
+  { // Lever de lune seulement
+    if (nowMin > riseMin)
+      return (1);
   }
-  return(0); // en cas de doute, tout dessous
+
+  if (Moonset && (!Moonrise))
+  { // Coucher de lune seulement
+    if (nowMin < setMin)
+      return (1);
+  }
+  return (0); // en cas de doute, tout dessous
 }

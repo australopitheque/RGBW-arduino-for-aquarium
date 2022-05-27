@@ -332,7 +332,14 @@ void nuitlune()
       fineffect = true;
     }
   }
-  else if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) && (moonleverday != -1 || mooncoucherday != -1)) || ((hour(t) * 60 + minute(t) > Heurelevermoon * 60 + minutelevermoon) && (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon) && (moonleverday != -1 || mooncoucherday != -1)))
+  else if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && // lever avant coucher
+            (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) &&
+            ((moonleverday != -1) ||
+             (moonleverday == day(t)))) ||
+           ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && // lever apres coucher
+            (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon) &&
+            ((moonleverday != -1) ||
+             (moonleverday == day(t)))))
   { // si heure lever lune ou avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
@@ -517,7 +524,7 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
     Serial.println("jours soleil effet");
     fineffect = false;
   }
-  else if ((hour(t) * 60 + minute(t) > Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) < heurecoucherc * 60 + minutecoucherc))
+  else if ((hour(t) * 60 + minute(t) <= Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) >= heurecoucherc * 60 + minutecoucherc))
   { // si avant heure lever ou si apres heure coucher
     effect = "lune";
     Serial.println("lancement lune effet");
@@ -757,9 +764,11 @@ void luneimage()
   double *rise;
   double *set;
   time_t t = myRTC.get();
-  Serial.println("luneimage");
+
   if (day(t) != oldday)
   {
+    Serial.println("luneimage day<> olday");
+    Serial.println("calcul sunrise");
     // calcul lever/coucher soleil
     calcSunriseSunset(year(t), month(t), day(t), latitude, longitude, transitcal, sunrisecal, sunsetcal);
     SunTime24h(toLocal(sunrisecal) + time_zone + decalageetehiver); // conversion en h et m locale
@@ -772,13 +781,17 @@ void luneimage()
     heuretransit = hourscal;
     minutetransit = minutescal;
 
+    Serial.println("calcul moonrise");
     // calcul lever/coucher lune
     riseset(latitude, longitude, day(t), month(t), year(t), time_zone, rise, set); // lune lever et coucher calcul
-    SunTime24h(toLocal(*rise));                                                    // conversion en h et m
-
+    Serial.println(year(t));
+    Serial.println(month(t));
+    Serial.println(day(t));
+    SunTime24h(toLocal(*rise));   // conversion en h et m
     Heurelevermoon = hourscal;    // recupere l'heure convertie
     minutelevermoon = minutescal; // recupere minutes convertie
-
+    Serial.println(Heurelevermoon);
+    Serial.println(minutelevermoon);
     if (((Heurelevermoon + time_zone + decalageetehiver) >= 24) && (minutelevermoon >= 00)) // lever pour j+1 en H et m locale
     {
       if (moonleverday == day(t))
@@ -840,7 +853,7 @@ void luneimage()
       heurecouchermoon = heurecouchermoon + time_zone + decalageetehiver;
       mooncoucherday = day(t);
     }
-
+    Serial.println("calcul phasemoon");
     // calcul phasemoon
     jd = julianDate(year(t), month(t), day(t));
     // jd = julianDate(1972,1,1); // utilisé pour déboguer ceci est une nouvelle lune
