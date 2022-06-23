@@ -324,7 +324,7 @@ void nuitlune()
   if ((((int)leverhmoon == -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon)) ||
       (((int)leverhmoon != -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon) &&
        (hour(t) * 60 + minute(t) < (int)leverhmoon * 60 + (int)levermmoon)))
-  {             // pas de lever lune dans la journée
+  {             // pas de lever lune dans la journée ou heure de coucher
     oldcol = 1; // force l'extinction si l'heure coucher
     execol = 0;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
