@@ -17,7 +17,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // calcul soleil
-const double latitude = 47.6820104;
+const double latitude = 47.6820104; // a changer car  non gere par l'ecran
 const double longitude = -2.0178258;
 const int time_zone = +1; // paris
 double sunrisecal;        // Sunrise, en Heure (UTC)
@@ -310,37 +310,33 @@ void whitesun() // ne gere que le white suivant l'heure de la journée partant d
 }
 void nuitlune()
 {
+  uint32_t leverhmoon;
+  uint32_t levermmoon;
+  uint32_t coucherhmoon;
+  uint32_t couchermmoon;
+  nexHlever.getValue(&leverhmoon);
+  nexMlever.getValue(&levermmoon);
+  nexHcoucher.getValue(&coucherhmoon);
+  nexMcoucher.getValue(&couchermmoon);
   byte illune;
   time_t t = myRTC.get();
-  if ((moonleverday == -1) || (mooncoucherday == -1))
-  {
-    if (moonleverday == -1)
-    {             // pas de lever lune
-      oldcol = 1; // force l'extinction
-      execol = 0;
-      colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
-      fineffect = true;
-    }
-    else
-    { // lune ou lune pas de coucher
-      Serial.println(" VOL- - Clair de lune sans coucher ");
-      ndiomoon = 7;
-      colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
-      execol = 0;
-      illune = map(illuminamoon, 0, 100, 0, 128);
-      colorWipe(pixels.numPixels() / ndiomoon, pixels.Color(0, 0, illune / intensity, 0));
-      fineffect = true;
-    }
+
+  if ((((int)leverhmoon == -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon)) ||
+      (((int)leverhmoon != -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon) &&
+       (hour(t) * 60 + minute(t) < (int)leverhmoon * 60 + (int)levermmoon)))
+  {             // pas de lever lune dans la journée
+    oldcol = 1; // force l'extinction si l'heure coucher
+    execol = 0;
+    colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
+    fineffect = true;
   }
-  else if (((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && // lever avant coucher
-            (hour(t) * 60 + minute(t) <= heurecouchermoon * 60 + minutecouchermoon) &&
-            ((moonleverday != -1) ||
-             (moonleverday == day(t)))) ||
-           ((hour(t) * 60 + minute(t) >= Heurelevermoon * 60 + minutelevermoon) && // lever apres coucher
-            (Heurelevermoon * 60 + minutelevermoon > heurecouchermoon * 60 + minutecouchermoon) &&
-            ((moonleverday != -1) ||
-             (moonleverday == day(t)))))
-  { // si heure lever lune ou avant heure coucher lune ou heure lever lune est apres coucher lune
+  //
+  else if ((((int)leverhmoon != 1 && (int)coucherhmoon != -1) &&
+            (hour(t) * 60 + minute(t) >= (int)leverhmoon * 60 + (int)levermmoon) && // lever avant coucher
+            (hour(t) * 60 + minute(t) <= (int)coucherhmoon * 60 + (int)couchermmoon)) ||
+           ((hour(t) * 60 + minute(t) >= (int)leverhmoon * 60 + (int)levermmoon) && // lever apres coucher
+            ((int)leverhmoon * 60 + (int)levermmoon >= (int)coucherhmoon * 60 + (int)couchermmoon)))
+  { // si heure lever lune et avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
