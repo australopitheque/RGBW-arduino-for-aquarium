@@ -310,34 +310,44 @@ void whitesun() // ne gere que le white suivant l'heure de la journée partant d
 }
 void nuitlune()
 {
-  uint32_t leverhmoon;
-  uint32_t levermmoon;
-  uint32_t coucherhmoon;
-  uint32_t couchermmoon;
-  nexHlever.getValue(&leverhmoon);
-  nexMlever.getValue(&levermmoon);
-  nexHcoucher.getValue(&coucherhmoon);
-  nexMcoucher.getValue(&couchermmoon);
+  oldcol = 1; // force l'extinction avant affichage mode lune
+  execol = 0;
+  colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // extinction de toutes les led's
+  int leverhmoon;
+  int levermmoon;
+  int coucherhmoon;
+  int couchermmoon;
+  leverhmoon = Heurelevermoon;
+  levermmoon = minutelevermoon;
+  coucherhmoon = heurecouchermoon;
+  couchermmoon = minutecouchermoon;
   byte illune;
   time_t t = myRTC.get();
 
-  if ((((int)leverhmoon == -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon)) ||
-      (((int)leverhmoon != -1) && ((int)coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= (int)coucherhmoon * 60 + (int)couchermmoon) &&
-       (hour(t) * 60 + minute(t) < (int)leverhmoon * 60 + (int)levermmoon)))
+  if (((leverhmoon == -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon)) ||
+      ((leverhmoon != -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon) &&
+       (hour(t) * 60 + minute(t) <= leverhmoon * 60 + levermmoon)) ||
+      ((leverhmoon != -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) < leverhmoon * 60 + levermmoon)))
   {             // pas de lever lune dans la journée ou heure de coucher
     oldcol = 1; // force l'extinction si heure coucher
     execol = 0;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
     fineffect = true;
+    Serial.println(" VOL- - Pas de lune  ");
   }
   //
-  else if ((((int)leverhmoon != 1 && (int)coucherhmoon != -1) &&
-            (hour(t) * 60 + minute(t) >= (int)leverhmoon * 60 + (int)levermmoon) && // lever avant coucher
-            (hour(t) * 60 + minute(t) <= (int)coucherhmoon * 60 + (int)couchermmoon)) ||
-           ((hour(t) * 60 + minute(t) >= (int)leverhmoon * 60 + (int)levermmoon) && // lever apres coucher
-            ((int)leverhmoon * 60 + (int)levermmoon >= (int)coucherhmoon * 60 + (int)couchermmoon)))
+  else if (((leverhmoon != 1 && coucherhmoon != -1) &&
+            (hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && // lever avant coucher
+            (hour(t) * 60 + minute(t) <= coucherhmoon * 60 + couchermmoon)) ||
+           ((hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && // lever apres coucher
+            (leverhmoon * 60 + levermmoon >= coucherhmoon * 60 + couchermmoon)))
+
   { // si heure lever lune et avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
+    Serial.print(leverhmoon);
+    Serial.print(":");
+    Serial.println(levermmoon);
+
     ndiomoon = 7;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0));
     execol = 0;
@@ -523,7 +533,7 @@ void commandeffect() // declanchement des effets suivant l'horaire en mode autom
   else if ((hour(t) * 60 + minute(t) <= Heureleverc * 60 + minuteleverc) || (hour(t) * 60 + minute(t) >= heurecoucherc * 60 + minutecoucherc))
   { // si avant heure lever ou si apres heure coucher
     effect = "lune";
-    Serial.println("lancement lune effet");
+    // Serial.println("lancement lune effet");
     fineffect = false;
   }
   if ((ModeAuto == 1) && (fineffect == false))
@@ -995,10 +1005,7 @@ void pmenupush(void *ptr) // traitement bouton parametre page 0
     luneimage();
   }
 }
-void reglageheurepop(void *ptr)
-{
-}
-void retourparamkelvinpush(void *ptr) {}
+
 void boutonmodeonoff(void *ptr)
 {
   uint32_t dual_state;
@@ -1026,8 +1033,8 @@ void p2PopCallback(void *ptr) // traitement page 2
 {
   // affichage de l'heure et date du DS3231 sur la page 2
   byte Jours;
-  Jours = myRTC.readRTC(3);
   time_t t = myRTC.get();
+  Jours = myRTC.readRTC(3);
   jsemainesetting.setText(tableauDesJours[Jours]);
   heuresetting.setValue(hour(t));
   minutesetting.setValue(minute(t));
@@ -1111,8 +1118,7 @@ void setup(void)
   // surveillance des boutons
   // paramkelvin.attachPop(kelvinpush, &paramkelvin);
   pmenu.attachPop(pmenupush, &pmenu);
-  reglageheure.attachPop(reglageheurepop, &reglageheure);
-  retourparamkelvin.attachPop(retourparamkelvinpush, &retourparamkelvin);
+
   p2.attachPop(p2PopCallback, &p2);
   p1.attachPop(p1PopCallback, &p1);
   modeonoff.attachPop(boutonmodeonoff, &modeonoff);
