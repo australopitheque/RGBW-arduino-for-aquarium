@@ -324,23 +324,21 @@ void nuitlune()
   byte illune;
   time_t t = myRTC.get();
 
-  if (((leverhmoon == -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon)) ||
-      ((leverhmoon != -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon) &&
-       (hour(t) * 60 + minute(t) <= leverhmoon * 60 + levermmoon)) ||
-      ((leverhmoon != -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) < leverhmoon * 60 + levermmoon)))
-  {             // pas de lever lune dans la journée ou heure de coucher
-    oldcol = 1; // force l'extinction si heure coucher
+  if (((leverhmoon == -1) && (coucherhmoon != -1) && (hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon)) ||                                                                                      // pas de lever
+      ((leverhmoon != -1) && (coucherhmoon != -1) &&                                                                                                                                                         // lever et coucher existe
+       (((hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon) && (hour(t) * 60 + minute(t) <= leverhmoon * 60 + levermmoon)) ||                                                                    // si T > coucher et avant lever
+        ((hour(t) * 60 + minute(t) >= coucherhmoon * 60 + couchermmoon) && (hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon && coucherhmoon * 60 + couchermmoon > leverhmoon * 60 + levermmoon)) || // si T > coucher et apres lever
+        ((hour(t) * 60 + minute(t) <= leverhmoon * 60 + levermmoon) && (hour(t) * 60 + minute(t) <= coucherhmoon * 60 + couchermmoon)))))                                                                    // si T < lever et avant coucher
+  {                                                                                                                                                                                                          // pas de lever lune dans la journée ou heure de coucher
+    oldcol = 1;                                                                                                                                                                                              // force l'extinction si heure coucher
     execol = 0;
     colorWipe(pixels.numPixels(), pixels.Color(0, 0, 0, 0)); // pas de lune ou lune coucher
     fineffect = true;
     Serial.println(" VOL- - Pas de lune  ");
   }
-  //
-  else if (((leverhmoon != 1 && coucherhmoon != -1) &&
-            (hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && // lever avant coucher
-            (hour(t) * 60 + minute(t) <= coucherhmoon * 60 + couchermmoon)) ||
-           ((hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && // lever apres coucher
-            (leverhmoon * 60 + levermmoon >= coucherhmoon * 60 + couchermmoon)))
+  else if ((leverhmoon != 1 && coucherhmoon != -1) &&                                                                                            // lever et coucher existe
+           (((hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && (hour(t) * 60 + minute(t) <= coucherhmoon * 60 + couchermmoon)) ||    // T>lever avant coucher
+            ((hour(t) * 60 + minute(t) >= leverhmoon * 60 + levermmoon) && (leverhmoon * 60 + levermmoon >= coucherhmoon * 60 + couchermmoon)))) // T>lever apres coucher
 
   { // si heure lever lune et avant heure coucher lune ou heure lever lune est apres coucher lune
     Serial.println(" VOL- - Clair de lune  ");
